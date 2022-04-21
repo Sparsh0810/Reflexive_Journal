@@ -1,0 +1,285 @@
+Linux implements far fewer system calls than most other operating system kernels. For
+example, a count of the x86-64 architecture’s system calls comes in at around 300, com‐
+pared with the suspected thousands of system calls on Microsoft Windows.
+
+
+It is not possible to directly link user-space applications with kernel space. For reasons
+of security and reliability, user-space applications must not be allowed to directly execute
+kernel code or manipulate kernel data.
+
+
+On i386, for example, a register is used for each possible parameter—registers ebx, ecx, edx, esi, and edi contain, in order,
+the first five parameters.
+
+
+The API defines a family of basic and essential functions, such as memory management and string-manipulation routines.
+
+
+API defines a source interface.
+
+An ABI defines the binary interface between
+two or more pieces of software on a particular architecture. It defines how an application
+interacts with itself, how an application interacts with the kernel, and how an application
+interacts with libraries. Whereas an API ensures source compatibility, an ABI ensures
+binary compatibility, guaranteeing that a piece of object code will function on any system
+with the same ABI, without requiring recompilation.
+
+
+
+ABIs are concerned with issues such as calling conventions, byte ordering, register use,
+system call invocation, linking, library behavior, and the binary object format.
+
+
+
+The calling convention, for example, defines how functions are invoked, how arguments are
+passed to functions, which registers are preserved and which are mangled, and how the
+caller retrieves the return value.
+
+
+The ABI is defined and implemented by the kernel and the toolchain.
+
+
+
+Linux aims toward compliance with two of the most important and prevalent standards: POSIX and the
+Single UNIX Specification (SUS).
+
+POSIX:- Portable Operating System Interface.
+
+
+----------------------------------------------------------------------------------------------------------------------
+                                             Concepts of Linux Programming
+
+
+1]Abstractions such as the file and the process, interfaces to manage pipes and sockets, and so on, are at the core of a Unix system.
+
+
+                                            --Files and the Filesystem --
+
+
+An open file is referenced via a unique descriptor, a mapping from the metadata associated with the open file back to the specific file itself.
+
+Inside the Linux kernel, this descriptor is handled by an integer (of the C type int) called the file descriptor, 
+abbreviated fd. File descriptors are shared with user space, 
+and are used directly by user programs to access files. 
+A large part of Linux system programming consists of opening, manipulating, closing, and otherwise using file descriptors. 
+
+
+                                                  Regular files
+
+
+A regular file contains bytes of data, organized into a linear array called a byte stream.
+
+
+**Linux, no further organization or formatting is specified for a file.**
+
+--Some operating systems, such as VMS, provide highly structured files, supporting concepts such as records. Linux does not. --
+
+
+                                    //File position or File offset.
+
+
+Any of the bytes within a file may be read from or written to. 
+These operations start at a specific byte, which is one’s conceptual “location” within the file. 
+This location is called the file position or file offset. 
+The file position is an essential piece of the metadata that the kernel associates with each open file. When a file is first opened, the file position
+
+ 
+                                       Directories and links
+
+
+
+Accessing a file via its inode number is cumbersome (and also a potential security hole).
+
+
+
+INODE NO:- The inode number refers to the physical file, the data stored in a particular location
+
+
+ A directory acts as a mapping of human-readable names to inode numbers.
+
+
+-- A name and inode pair is called a link. The physical on-disk form of this mapping—for example,
+a simple table or a hash —is implemented and managed by the kernel code that supports a given filesystem--
+
+METADATA:- set of data that describes and gives information about other data.
+
+
+** The Linux kernel also employs a cache, called the dentry cache, 
+to store the results of directory resolutions, 
+providing for speedier lookups in the future given temporal locality.**
+
+
+
+A pathname that starts at the root directory is said to be fully qualified, 
+and is called an absolute pathname. Some pathnames are not fully qualified; instead, 
+they are provided relative to some other directory (for example, todo/plunder). These paths are called relative pathnames. \
+
+Although directories are treated like normal files, the kernel does not allow them to be opened and manipulated like regular files.
+
+
+                                            Hard links:-
+
+
+When multiple links map different names to the
+same inode, we call them hard links.
+Hard links allow for complex filesystem structures with multiple pathnames pointing
+to the same data. The hard links can be in the same directory, or in two or more different
+directories.
+
+
+For example, a specific inode that points to a specific chunk of data can be hard linked
+from /home/bluebeard/treasure.txt and /home/blackbeard/to_steal.txt.
+
+
+
+**each inode contains
+a link count that keeps track of the number of links within the filesystem that point to
+it. When a pathname is unlinked, the link count is decremented by one; only when it
+reaches zero are the inode and its associated data actually removed from the filesystem.**
+
+
+
+                                           Symbolic links
+
+--Hard links cannot span filesystems because an inode number is meaningless outside of
+the inode’s own filesystem. To allow links that can span filesystems, and that are a bit
+simpler and less transparent, Unix systems also implement symbolic links (often short‐
+ened to symlinks).
+
+symbolic links can point anywhere, 
+including to files and directories that reside on different filesystems, 
+and even to files and directories that do not exist. 
+A symbolic link that points to a nonexistent file is called a broken link. 
+ 
+                                          Special files 
+
+Special files are kernel objects that are represented as files.
+
+
+** Linux supports four: block device files, character device files, named pipes, and Unix domain sockets.**
+
+
+**Unix devices are generally broken into two groups: character devices and block devices**
+
+A character device is accessed as a linear queue of bytes.When there are no more characters left to read, the device returns end-of-file (EOF).
+
+
+e.g:- Keyboard
+
+
+A "block device", in contrast, is accessed as an array of bytes.
+
+Hard disks, floppy drives, CD-ROM drives, and flash memory are all examples of block devices. 
+
+Named pipes (often called FIFOs, short for “first in, first out”) are an interprocess communication (IPC) mechanism 
+that provides a communication channel over a file de‐ scriptor,
+ accessed via a special file. 
+
+
+"Sockets" are an advanced form of IPC that allow for communication between two different processes, 
+not only on the same machine, but even on two different machines. 
+In fact, sockets form the basis of network and Internet programming. 
+They come in multiple varieties, including the Unix domain socket, 
+which is the form of socket used for communication within the local machine. 
+
+Processes are object code in execution: active, running programs.
+
+The format most common in Linux is called Executable and Linkable Format(ELF). 
+The executable format contains metadata, 
+and multiple sections of code and data. 
+Sections are linear chunks of the object code that load into linear chunks of memory.
+
+The most important and common sections are the text section, 
+the data section, and the bss section. 
+The text section contains executable code and read-only data, 
+such as con‐ stant variables, and is typically marked read-only and executable. 
+The data section con‐ tains initialized data, such as C variables with defined values, 
+and is typically marked readable and writable. The bss section contains uninitialized global data
+
+Processes typically request and manipulate resources only through system calls. Resources include timers, 
+pending signals, open files, network connections, hardware, and IPC mechanisms. 
+A process’s resources, along with data and statistics related to the process, 
+are stored inside the kernel in the "process’s process descriptor".
+
+
+The Linux kernel, supporting both preemptive
+multitasking and virtual memory, provides every process both a virtualized processor
+and a virtualized view of memory.
+
+Through virtual memory and paging, the kernel allows many processes to coexist on the system,
+		
+					Threads
+
+Threads: they are simply normal processes that happen to share some resources. 
+In user space,// Linux implements threads in accordance with POSIX 1003.1c (known as Pthreads). 
+The name of the current Linux 
+thread implementation, which is part of glibc,
+
+A thread consists of a stack (which stores its local variables, 
+just as the process stack does on nonthreaded systems), 
+processor state, and a current location in the object code (usually stored in the processor’s instruction pointer).
+
+Process hierarchy 
+
+Each process is identified by a unique positive integer called the process ID (pid). 
+The pid of the first process is 1, and each subsequent process receives a new, unique pid.
+
+The process tree is rooted at the first process, known as the init process, 
+which is typically the init program. New processes are created via the fork() system call. 
+This system call creates a duplicate of the calling process. The original process is called the parent; 
+the new process is called the child. Every process except the first has a parent. 
+If a parent process terminates before its child, the kernel will reparent the child to the init process.
+
+**ZOMBIE PROCESS**:--
+
+A zombie process is a process whose execution is completed but it still has an entry in the process table. 
+Zombie processes usually occur for child processes, 
+as the parent process still needs to read its child’s exit status. 
+Once this is done using the wait system call, 
+the zombie process is eliminated from the process table. 
+This is known as reaping the zombie process.
+
+Users and Groups
+
+Each user is associated with a unique positive integer called the user ID (uid).
+
+
+Child processes inherit the uids of their parents. 
+The uid 0 is associated with a special user known as root.
+
+For example, only the root user can change a process’s uid. 
+Consequently, the login program runs as root. 
+
+Each process is therefore also associated with a corresponding group ID (gid),
+ and has a real gid, an effective gid, a saved gid, and a filesystem gid.
+
+PERMISSIONS:-
+
+8 400 r-------- Owner may read 
+
+7 200 -w------- Owner may write 
+
+6 100 --x------ Owner may execute 
+
+5 040 ---r----- Group may read 
+
+4 020 ----w---- Group may write 
+
+3 010 -----x--- Group may execute 
+
+Concepts of Linux Programming | 19
+
+Bit Octal value Text value Corresponding permission 
+
+2 004 ------r-- Everyone else may read 
+
+1 002 -------w- Everyone else may write 
+
+0 001 --------x Everyone else may execute
+
+
+The first character will almost always be either a ‘-‘,
+ which means it’s a file, or a ‘d’, which means it’s a directory.
+
+
+
